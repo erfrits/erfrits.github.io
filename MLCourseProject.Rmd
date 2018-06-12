@@ -1,7 +1,7 @@
 ---
 title: "Weight Lifting Excersise calssification - ML Course Project"
 author: "Erika R. Frits"
-date: '2018-05-28 '
+date: '2018-06-10'
 output: html_document
 ---
 
