@@ -1,5 +1,5 @@
 ---
-title: "Weight Lifting Excersise calssification - ML Course Project"
+title: "Weight Lifting Excersise classification - ML Course Project"
 author: "Erika R. Frits"
 date: '2018-06-10'
 output: html_document
