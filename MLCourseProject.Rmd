@@ -105,7 +105,9 @@ Note: the test data set contains only one record per __num_window__ so it does n
 
 ## Fitting the model using random forest method
 
-I split the training data set to two groups, 70% of the data will be used to fit the model, 30% will used 
+I selected the random forrest method, because it is more roboust than decision trees.
+
+I split the training data set into two groups, 70% of the data will be used to fit the model, 30% will used 
 for model testing.
 
 ```{r}
@@ -135,7 +137,8 @@ Result of the model tesing:
 rfconf
 ```
 
-The accurancy of the model on the testing data is `r rfconf$overall[1] * 100`%.
+The accurancy of the model on the testing data is `r rfconf$overall[1] * 100`%, 
+out of sample error is `r (1-rfconf$overall[1]) * 100`%
 
 ## Prediction
 ```{r}

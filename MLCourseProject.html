@@ -161,7 +161,8 @@ perfomed weight lifting excercises based on their fashion; was it executed accor
 </div>
 <div id="fitting-the-model-using-random-forest-method" class="section level2">
 <h2>Fitting the model using random forest method</h2>
-<p>I split the training data set to two groups, 70% of the data will be used to fit the model, 30% will used for model testing.</p>
+<p>I selected the random forrest method, because it is more roboust than decision trees.</p>
+<p>I split the training data set into two groups, 70% of the data will be used to fit the model, 30% will used for model testing.</p>
 <pre><code>##          obs
 ## training 602
 ## testing  256</code></pre>
@@ -217,7 +218,7 @@ perfomed weight lifting excercises based on their fashion; was it executed accor
 ## Detection Rate         0.2500   0.1680   0.1641   0.1680   0.1562
 ## Detection Prevalence   0.2852   0.1914   0.1758   0.1836   0.1641
 ## Balanced Accuracy      0.9612   0.9531   0.9213   0.9291   0.9300</code></pre>
-<p>The accurancy of the model on the testing data is 90.625%.</p>
+<p>The accurancy of the model on the testing data is 90.625%, out of sample error is 9.375%</p>
 </div>
 <div id="prediction" class="section level2">
 <h2>Prediction</h2>
