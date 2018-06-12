@@ -1,0 +1,150 @@
+---
+title: "Weight Lifting Excersise calssification - ML Course Project"
+author: "Erika R. Frits"
+date: '2018-05-28 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(dplyr)
+library(GGally)
+library(caret)
+library(randomForest)
+set.seed(5001)
+```
+
+## Summary
+The goal of this analysis is to find a machine learning method which can classify  
+perfomed weight lifting excercises based on their fashion;
+was it executed according to the description or had different kind of errors? 
+More information here: 
+http://groupware.les.inf.puc-rio.br/har
+
+```{r}
+# read the data
+training <- read.csv("pml-training.csv", header = T )
+testing <- read.csv("pml-testing.csv", header = T )
+```
+
+## Exploration of the data
+
+We got two dataset:
+
+- training: larger dataset to create and validate the classifaction model  
+- testing: smaller, which contain data to classify
+
+```{r}
+# get number of observations
+tr.n <- nrow(training)
+te.n <- nrow(testing)
+# determine missing data levels
+tr.na <- sapply(training, function(x){sum(is.na(x)*1) / tr.n})
+te.na <- sapply(testing, function(x){sum(is.na(x)*1) / te.n})
+# get variables with data
+tr.okNames <- names(tr.na[tr.na <= 0.9])
+te.okNames <- names(te.na[te.na <= 0.9])
+# list of usable variables based on the training and test set
+uNames <- intersect(te.okNames, tr.okNames)
+```
+
+Summary:
+```{r}
+data.frame(obs = c(tr.n, te.n), row.names = c("for training and testing", "to predict")) %>%
+    cbind(variables = c(ncol(training), ncol(testing))) %>%
+    cbind("variables <= 90% NA" = c(length(tr.okNames), length(te.okNames))) 
+
+```
+
+I found that the variables which fillment rate is below 10%, are derived variables, 
+which counterpart are also not filled in the test set. I decided to remove these variables from the data sets, so I started with the raw measurement data. I also removed the timestamp information and the __new_window__ variable, because they are data about the 
+circumstances of the measurement and not about the execution of the exercise.
+
+```{r}
+tr <- training %>% select(c(uNames[-c(1,3:6)], "classe"))
+te <- testing %>% select(c(uNames[-c(1,3:6)],"problem_id"))
+```
+
+
+### Correlation between the measured variables
+```{r}
+ggcorr(tr[,c(1,3:55)], nbreaks = 7, size=2.5, hjust = 1.05, layout.exp = 10)
+```
+
+Most of the variables are not or just slightly correlated with each other.
+
+### Checking the factors  
+
+I found that , that in case of some variables the values are differ based on the __user_name__, so I left this variable in the data set.
+```{r}
+X.max <- max(training$X)
+ggplot(training, aes(x=X, y=pitch_arm, color = classe)) +  geom_point() + facet_grid(. ~ user_name) + labs(title = "Pitch_arm vs. index", x="index") + scale_x_continuous(breaks = NULL)
+ggplot(training, aes(x=X, y=pitch_belt, color = classe)) +  geom_point() + facet_grid(. ~ user_name)  + labs(title = "Pitch_belt vs. index", x="index") + scale_x_continuous(breaks = NULL)
+```
+
+### Converting the data
+
+I supposed (based on the data provider's article), that one execution of the excersise is identified 
+by one __num_window__ value, so I compressed the data set by replacing the measured data points for every __num_window__ by their mean values and I handled all "window" as one data point 
+(the __num_window__ variable is not a predictor).
+
+```{r}
+classe.v <- LETTERS[1:5]
+tr.c <- tr %>% 
+    mutate(classe2 = sapply(classe, function(x){which(x == classe.v)})) %>%
+    select(-classe) %>%     # needs to be removed temporary because it causes errors in summarization
+    group_by(user_name, num_window) %>% 
+    summarize_all(mean) %>%
+    mutate(classe = as.factor(classe.v[classe2])) %>%
+    select(-55)
+tr.c.id <- tr.c$num_window
+tr.c <- select(tr.c, -2)
+```
+
+Note: the test data set contains only one record per __num_window__ so it does not need aggreagation.
+
+## Fitting the model using random forest method
+
+I split the training data set to two groups, 70% of the data will be used to fit the model, 30% will used 
+for model testing.
+
+```{r}
+forTraining <- createDataPartition(tr.c$user_name, p=0.7, list = FALSE)
+tr.t <- tr.c[forTraining,]
+tr.v <- tr.c[-forTraining,]
+data.frame(obs = c(nrow(tr.t), nrow(tr.v)), row.names = c("training", "testing"))
+```
+
+I use 10-fold cross validation together with random forest and let the model select the best.
+
+
+```{r}
+trCtrl <- trainControl(method="cv", number=10)
+rffit <- train(classe ~ ., data = tr.t, method = "rf", trControl = trCtrl)
+rfpredict <- predict(rffit, tr.v)
+rfconf <- confusionMatrix(rfpredict, tr.v$classe)
+```
+
+The fitted model:
+```{r}
+rffit
+```
+
+Result of the model tesing:
+```{r}
+rfconf
+```
+
+The accurancy of the model on the testing data is `r rfconf$overall[1] * 100`%.
+
+## Prediction
+```{r}
+te.pr <- predict(rffit, te)
+data.frame(problem_id = te$problem_id, result = te.pr)
+```
+
+
+
+
+
+
